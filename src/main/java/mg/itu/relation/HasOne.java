@@ -1,15 +1,18 @@
 package mg.itu.relation;
 
 import mg.itu.request.Entity;
+import mg.itu.tools.ReflectionTools;
 
-public final class HasOne {
-    protected Class<? extends Entity> classe;
-    protected String idColumn;
-    protected String idReference;
-
+public final class HasOne extends Relation {
     public HasOne(Class<? extends Entity> classe,String idColumn,String idReference){
-        this.classe=classe;
-        this.idColumn=idColumn;
-        this.idReference=idReference;
+        super(classe,idColumn,idReference);
+    }
+
+    @Override
+    public String join() {
+        if(this.alias!=null){
+            return "join "+ ReflectionTools.getEntityName(classe) +" as "+alias+" on "+this.getAliasTable()+".\""+this.idColumn+"\" = "+this.getName()+".\""+this.idReference+"\"";
+        }
+        return "join "+ ReflectionTools.getEntityName(classe) +" on "+this.getAliasTable()+".\""+this.idColumn+"\" = "+this.getName()+".\""+this.idReference+"\"";
     }
 }

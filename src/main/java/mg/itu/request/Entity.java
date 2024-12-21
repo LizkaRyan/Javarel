@@ -1,6 +1,7 @@
 package mg.itu.request;
 
 import mg.itu.relation.HasMany;
+import mg.itu.relation.HasOne;
 import mg.itu.tools.ReflectionTools;
 
 public class Entity {
@@ -17,5 +18,9 @@ public class Entity {
 
     public HasMany hasMany(Class<? extends Entity> classe, String idColumn, String idReference){
         return new HasMany(classe,idColumn,idReference);
+    }
+
+    public HasOne hasOne(Class<? extends Entity> classe, String idColumn, String idReference){
+        return new HasOne(classe,idColumn,idReference);
     }
 }

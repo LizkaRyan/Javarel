@@ -78,7 +78,6 @@ public class QueryBuilder {
 
     public String getRequest(){
         String request="select "+this.select+" from "+table;
-        System.out.println(this.alias);
         if(alias!=null){
             request+=" as "+alias;
         }
