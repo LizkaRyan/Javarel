@@ -6,7 +6,12 @@ import mg.itu.test.personne.Personne;
 public class Main {
     public static void main(String[] args) {
         Personne personne=new Personne();
-        System.out.println(personne.createQuery("p").getRequest());
+        try{
+            System.out.println(personne.createQuery("p").join("chiens","c").getRequest());
+        }
+        catch (Exception ex){
+            System.out.println(ex);
+        }
         System.out.println("Vita");
     }
 }

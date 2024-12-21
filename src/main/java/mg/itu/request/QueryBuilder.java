@@ -1,5 +1,6 @@
 package mg.itu.request;
 
+import mg.itu.relation.Relation;
 import mg.itu.tools.ReflectionTools;
 import mg.itu.tools.UtilString;
 
@@ -38,21 +39,26 @@ public class QueryBuilder {
         this.requete=requete;
     }
 
-    protected String getName(){
+    public String getName(){
         if(alias!=null){
             return alias;
         }
         return table;
     }
 
-    public void join(String liaison,String alias){
-        String idLiaison=UtilString.makePascalCase(liaison);
-        this.join+=" join "+liaison+" as "+alias+" "+getName()+".id"+idLiaison+" = "+alias+".id"+idLiaison;
+    public QueryBuilder join(String liaison,String alias)throws Exception{
+        Relation relation=ReflectionTools.getRelationEntity(this.classe,liaison);
+        relation.alias=alias;
+        relation.setAliasTable(this.getName());
+        this.join+="\n\t"+relation.join();
+        return this;
     }
 
-    public void join(String liaison){
-        String idLiaison=UtilString.makePascalCase(liaison);
-        this.join+=" join "+liaison+" "+getName()+".id"+idLiaison+" = "+liaison+".id"+idLiaison;
+    public QueryBuilder join(String liaison)throws Exception{
+        Relation relation=ReflectionTools.getRelationEntity(this.classe,liaison);
+        relation.setAliasTable(this.getName());
+        this.join+="\n\t"+relation.join();
+        return this;
     }
 
     public void where(String where){
@@ -72,7 +78,8 @@ public class QueryBuilder {
 
     public String getRequest(){
         String request="select "+this.select+" from "+table;
-        if(!Objects.equals(this.alias,"")){
+        System.out.println(this.alias);
+        if(alias!=null){
             request+=" as "+alias;
         }
         if(!Objects.equals(this.join, "")){

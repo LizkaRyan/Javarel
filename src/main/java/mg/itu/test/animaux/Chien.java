@@ -1,6 +1,8 @@
 package mg.itu.test.animaux;
 
-public class Chien {
+import mg.itu.request.Entity;
+
+public class Chien extends Entity {
     private String nom;
     private String prenom;
 }

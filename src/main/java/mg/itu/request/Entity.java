@@ -16,6 +16,6 @@ public class Entity {
     }
 
     public HasMany hasMany(Class<? extends Entity> classe, String idColumn, String idReference){
-        return new HasMany(classe,idColumn,idReference,alias);
+        return new HasMany(classe,idColumn,idReference);
     }
 }
