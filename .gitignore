@@ -23,5 +23,5 @@
 hs_err_pid*
 replay_pid*
 
-/src/main/java/mg/itu/test/*.java
-/src/main/java/mg/itu/Main.java
+src/main/java/mg/itu/test
+src/main/java/mg/itu/Main.java
