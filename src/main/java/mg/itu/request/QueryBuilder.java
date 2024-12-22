@@ -43,19 +43,19 @@ public class QueryBuilder {
         if(alias!=null){
             return alias;
         }
-        return table;
+        return "\""+table+"\"";
     }
 
-    public QueryBuilder join(String liaison,String alias)throws Exception{
-        Relation relation=ReflectionTools.getRelationEntity(this.classe,liaison);
+    public QueryBuilder join(String link,String alias)throws Exception{
+        Relation relation=ReflectionTools.getRelationEntity(this.classe,link);
         relation.alias=alias;
         relation.setAliasTable(this.getName());
         this.join+="\n\t"+relation.join();
         return this;
     }
 
-    public QueryBuilder join(String liaison)throws Exception{
-        Relation relation=ReflectionTools.getRelationEntity(this.classe,liaison);
+    public QueryBuilder join(String link)throws Exception{
+        Relation relation=ReflectionTools.getRelationEntity(this.classe,link);
         relation.setAliasTable(this.getName());
         this.join+="\n\t"+relation.join();
         return this;
@@ -82,12 +82,12 @@ public class QueryBuilder {
     }
 
     public String getRequest(){
-        String request="select "+this.select+" from "+table;
+        String request="select "+this.select+" from \""+table+"\"";
         if(alias!=null){
             request+=" as "+alias;
         }
         if(!Objects.equals(this.join, "")){
-            request+="\n "+this.join;
+            request+=" "+this.join;
         }
         if(!Objects.equals(this.where, "")){
             request+="\n where"+this.where;

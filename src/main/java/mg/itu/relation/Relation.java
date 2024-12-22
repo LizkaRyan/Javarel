@@ -2,6 +2,7 @@ package mg.itu.relation;
 
 import mg.itu.request.Entity;
 import mg.itu.request.QueryBuilder;
+import mg.itu.tools.ReflectionTools;
 
 public abstract class Relation extends QueryBuilder {
     protected String idLocal;
@@ -11,7 +12,6 @@ public abstract class Relation extends QueryBuilder {
         super(classe);
         this.idLocal=idLocal;
         this.idReference=idReference;
-        this.where(idReference+" = :"+idLocal);
     }
 
     public void setAliasTable(String aliasTable){
@@ -22,5 +22,12 @@ public abstract class Relation extends QueryBuilder {
         return this.aliasTable;
     }
 
-    public abstract String join();
+    public String join() {
+        if(this.alias!=null){
+            return " join "+ ReflectionTools.getEntityName(classe) +" as "+alias+" on "+this.getAliasTable()+".\""+this.idLocal+"\" = "+this.getName()+".\""+this.idReference+"\"";
+        }
+        return " join "+ ReflectionTools.getEntityName(classe) +" on "+this.getAliasTable()+".\""+this.idLocal+"\" = "+this.getName()+".\""+this.idReference+"\"";
+    }
+
+    public abstract Object execute();
 }

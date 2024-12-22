@@ -3,16 +3,17 @@ package mg.itu.relation;
 import mg.itu.request.Entity;
 import mg.itu.tools.ReflectionTools;
 
-public class BelongsTo extends Relation{
+import java.util.ArrayList;
+import java.util.List;
+
+public final class BelongsTo extends Relation{
     public BelongsTo(Class<? extends Entity> classe, String idLocal, String idReference){
         super(classe,idLocal,idReference);
+        this.where("\""+idReference+"\" = :"+idLocal);
     }
 
     @Override
-    public String join() {
-        if(this.alias!=null){
-            return "join "+ ReflectionTools.getEntityName(classe) +" as "+alias+" on "+this.getAliasTable()+".\""+this.idLocal+"\" = "+this.getName()+".\""+this.idReference+"\"";
-        }
-        return "join "+ ReflectionTools.getEntityName(classe) +" on "+this.getAliasTable()+".\""+this.idLocal+"\" = "+this.getName()+".\""+this.idReference+"\"";
+    public Entity execute(){
+        return new Entity();
     }
 }
