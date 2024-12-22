@@ -3,8 +3,8 @@ package mg.itu.relation;
 import mg.itu.request.Entity;
 import mg.itu.tools.ReflectionTools;
 
-public final class HasOne extends Relation {
-    public HasOne(Class<? extends Entity> classe,String idColumn,String idReference){
+public class BelongsTo extends Relation{
+    public BelongsTo(Class<? extends Entity> classe, String idColumn, String idReference){
         super(classe,idColumn,idReference);
     }
 
