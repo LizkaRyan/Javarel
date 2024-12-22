@@ -29,9 +29,13 @@ public class QueryBuilder {
 
     protected String where="";
 
+    protected String having="";
+
     protected String limit="";
 
     protected String orderBy="";
+
+    protected String groupBy="";
 
     protected Class classe;
 
@@ -70,11 +74,21 @@ public class QueryBuilder {
         return this;
     }
 
-    public void select(String select){
-        this.select="select "+select+" from "+table;
-        if(alias!=null){
-            this.select+=" as "+alias;
+    public QueryBuilder select(String select){
+        if(this.select!=""){
+            this.select+=", ";
         }
+        this.select=select;
+        return this;
+    }
+
+    public QueryBuilder having(String having){
+        String and="";
+        if(!Objects.equals(this.having, "")){
+            and=" and";
+        }
+        this.having+=and+" "+having;
+        return this;
     }
 
     public void orderBy(String column,String ascendance){
@@ -92,12 +106,26 @@ public class QueryBuilder {
         if(!Objects.equals(this.where, "")){
             request+="\n where"+this.where;
         }
+        if(!Objects.equals(this.having, "")){
+            request+="\n having"+this.having;
+        }
         if(!Objects.equals(this.orderBy, "")){
             request+="\n "+this.orderBy;
         }
         if(!Objects.equals(this.limit, "")){
             request+="\n "+this.limit;
         }
+        if(!Objects.equals(this.groupBy, "")){
+            request+="\n group by"+this.groupBy;
+        }
         return request;
+    }
+
+    public QueryBuilder groupBy(String... groups){
+        for (String group:groups) {
+            this.groupBy+=" "+group+",";
+        }
+        this.groupBy=this.groupBy.substring(0,this.groupBy.length()-1);
+        return this;
     }
 }
