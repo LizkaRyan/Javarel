@@ -61,8 +61,13 @@ public class QueryBuilder {
         return this;
     }
 
-    public void where(String where){
-        this.where="where "+where;
+    public QueryBuilder where(String where){
+        String and="";
+        if(!Objects.equals(this.where, "")){
+            and=" and";
+        }
+        this.where+=and+" "+where;
+        return this;
     }
 
     public void select(String select){
@@ -82,16 +87,16 @@ public class QueryBuilder {
             request+=" as "+alias;
         }
         if(!Objects.equals(this.join, "")){
-            request+=" "+this.join;
+            request+="\n "+this.join;
         }
         if(!Objects.equals(this.where, "")){
-            request+=" "+this.where;
+            request+="\n where"+this.where;
         }
         if(!Objects.equals(this.orderBy, "")){
-            request+=" "+this.orderBy;
+            request+="\n "+this.orderBy;
         }
         if(!Objects.equals(this.limit, "")){
-            request+=" "+this.limit;
+            request+="\n "+this.limit;
         }
         return request;
     }

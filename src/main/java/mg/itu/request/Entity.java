@@ -50,6 +50,6 @@ public class Entity {
     }
 
     public BelongsTo belongsTo(Class<? extends Entity> classe,String idReference,String idLocal){
-        return new BelongsTo(classe,ReflectionTools.getIdByDefault(classe),ReflectionTools.getIdByDefault(classe));
+        return new BelongsTo(classe,idLocal,idReference);
     }
 }

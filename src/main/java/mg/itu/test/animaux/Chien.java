@@ -12,6 +12,6 @@ public class Chien extends Entity {
     private Personne proprietaire;
 
     public BelongsTo proprietaire(){
-        return this.belongsTo(Personne.class);
+        return this.belongsTo(Personne.class,"idPersonne","idProprietaire");
     }
 }
