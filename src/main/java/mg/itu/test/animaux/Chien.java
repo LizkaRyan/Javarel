@@ -1,5 +1,6 @@
 package mg.itu.test.animaux;
 
+import mg.itu.relation.BelongsTo;
 import mg.itu.relation.HasOne;
 import mg.itu.request.Entity;
 import mg.itu.test.personne.Personne;
@@ -10,7 +11,7 @@ public class Chien extends Entity {
 
     private Personne proprietaire;
 
-    public HasOne proprietaire(){
-        return this.hasOne(Personne.class,"idProprietaire","idPersonne");
+    public BelongsTo proprietaire(){
+        return this.belongsTo(Personne.class);
     }
 }

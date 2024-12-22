@@ -18,6 +18,6 @@ public class Personne extends Entity {
     }
 
     public HasMany chiens(){
-        return this.hasMany(Chien.class,"idPersonne","idProprietaire");
+        return this.hasMany(Chien.class);
     }
 }

@@ -25,4 +25,9 @@ public final class ReflectionTools {
             throw ex;
         }
     }
+
+    public static String getIdByDefault(Class<? extends Entity> classe){
+        String entityName=getEntityName(classe);
+        return "id"+entityName.substring(0,1).toUpperCase()+entityName.substring(1);
+    }
 }
