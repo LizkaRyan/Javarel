@@ -22,6 +22,10 @@ public abstract class Relation extends QueryBuilder {
         return this.aliasTable;
     }
 
+    public void setAlias(String alias){
+        this.alias=alias;
+    }
+
     public String join() {
         if(this.alias!=null){
             return " join "+ ReflectionTools.getEntityName(classe) +" as "+alias+" on "+this.getAliasTable()+".\""+this.idLocal+"\" = "+this.getName()+".\""+this.idReference+"\"";
@@ -30,4 +34,8 @@ public abstract class Relation extends QueryBuilder {
     }
 
     public abstract Object execute();
+
+    public boolean isTheSame(Relation relation){
+        return this.getClasse()==relation.getClasse() && this.idLocal.compareTo(relation.idLocal)==0 && this.idReference.compareTo(relation.idReference)==0;
+    }
 }

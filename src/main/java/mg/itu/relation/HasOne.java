@@ -9,7 +9,7 @@ import java.util.List;
 public final class HasOne extends Relation {
     public HasOne(Class<? extends Entity> classe,String idColumn,String idReference){
         super(classe,idColumn,idReference);
-        this.where("\""+idReference+"\" = :"+idLocal);
+        this.whereRaw("\""+idReference+"\" = :"+idLocal);
     }
 
     @Override

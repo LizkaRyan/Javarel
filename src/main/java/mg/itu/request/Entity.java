@@ -1,9 +1,6 @@
 package mg.itu.request;
 
-import mg.itu.relation.BelongsTo;
-import mg.itu.relation.BelongsToMany;
-import mg.itu.relation.HasMany;
-import mg.itu.relation.HasOne;
+import mg.itu.relation.*;
 import mg.itu.tools.ReflectionTools;
 
 public class Entity {
@@ -15,7 +12,12 @@ public class Entity {
 
     public QueryBuilder createQuery(){
         this.alias=ReflectionTools.getEntityName(this.getClass());
-        return new QueryBuilder(this.getClass());
+        QueryBuilder queryBuilder=new QueryBuilder(this.getClass());
+        Relation relation=new HasOne(this.getClass(),null,null);
+        relation.setAlias(queryBuilder.getName());
+        relation.setAliasTable(queryBuilder.getName());
+        queryBuilder.joinInfos.add(relation);
+        return queryBuilder;
     }
 
     public HasMany hasMany(Class<? extends Entity> classe){
