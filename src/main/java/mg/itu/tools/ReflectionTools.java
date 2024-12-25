@@ -19,7 +19,7 @@ public final class ReflectionTools {
             return (Relation)method.invoke(object);
         }
         catch (NoSuchMethodException ex){
-            throw new NoSuchMethodException("The entity "+getEntityName(classe)+" should have a constructor and a function "+link+" with no parameters");
+            throw new NoSuchMethodException("The entity "+getEntityName(classe)+" should have a constructor and a function "+link+" public with no parameters");
         }
         catch (InstantiationException ex){
             throw ex;

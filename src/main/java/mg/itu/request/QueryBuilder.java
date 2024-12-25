@@ -77,7 +77,7 @@ public class QueryBuilder {
     }
 
     public QueryBuilder join(String link,String alias)throws Exception{
-        Relation relation=ReflectionTools.getRelationEntity(this.classe,link);
+        Relation relation=this.getRelation(link,0);
         relation.setAlias(alias);
         relation.setAliasTable(this.getName());
         this.addJoin(relation,alias);
@@ -86,7 +86,7 @@ public class QueryBuilder {
     }
 
     public QueryBuilder join(String link)throws Exception{
-        Relation relation=ReflectionTools.getRelationEntity(this.classe,link);
+        Relation relation=this.getRelation(link,0);
         relation.setAliasTable(this.getName());
         this.addJoin(relation);
         //this.join+="\n\t"+relation.join();
@@ -181,40 +181,47 @@ public class QueryBuilder {
 
     public String getJoinWhere(String sentence)throws Exception{
         String[] field=sentence.split("[.]");
+        Relation joinInfo=this.getDeepJoin(field,1);
+        return joinInfo.getName()+"."+field[field.length-1];
+    }
+
+    protected Relation getRelation(String sentence,int limit)throws Exception{
+        String[] field=sentence.split("[.]");
+        return this.getDeepJoin(field,limit);
+    }
+
+    protected Relation getDeepJoin(String[] field,int limit)throws Exception{
         if(field.length==1){
-            return sentence;
+            return ReflectionTools.getRelationEntity(this.classe,field[0]);
         }
         Class<? extends Entity> entity=this.getClasse();
         try{
             Relation joinInfo=this.getVariable(field[0]);
             int i;
-            for(i = 1; i < field.length - 1; i++){
-                joinInfo=getRelation(field[i],entity,joinInfo.getAliasTable());
-                entity = joinInfo.getClasse();
+            for(i = 1; i < field.length - limit; i++){
+                joinInfo=getRelation(field[i], joinInfo.getClasse(), joinInfo.getName());
             }
-            return joinInfo.getName()+"."+field[i];
+            if(joinInfo.isTheSame(this.joinInfos.get(0))){
+                return ReflectionTools.getRelationEntity(this.classe,field[i]);
+            }
+            return joinInfo;
         }
         catch (Exception exception){
             throw exception;
         }
     }
 
-    public Relation getRelation(String field,Class<? extends Entity> entity,String alias)throws Exception{
+    protected Relation getRelation(String field,Class<? extends Entity> entity,String alias)throws Exception{
         try{
-            Relation relation=ReflectionTools.getRelationEntity(entity,field);
-            boolean addIt=true;
+            Relation newRelation=ReflectionTools.getRelationEntity(entity,field);
             for (Relation joinInfo:this.joinInfos) {
-                if(joinInfo.isTheSame(relation)){
-                    addIt=false;
-                    relation=joinInfo;
-                    break;
+                if(joinInfo.isTheSame(newRelation)){
+                    return joinInfo;
                 }
             }
-            if(addIt){
-                relation.setAliasTable(alias);
-                this.joinInfos.add(relation);
-            }
-            return relation;
+            newRelation.setAliasTable(alias);
+            this.joinInfos.add(newRelation);
+            return newRelation;
         }
         catch (Exception ex){
             throw ex;
