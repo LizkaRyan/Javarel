@@ -1,12 +1,11 @@
 package mg.itu.request;
 
-import mg.itu.exception.VariableNotFoundException;
+import mg.itu.exception.PropertyNotFoundException;
 import mg.itu.relation.HasOne;
 import mg.itu.relation.Relation;
 import mg.itu.tools.ReflectionTools;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,7 +26,8 @@ public class QueryBuilder {
     protected String groupBy="";
 
     protected List<Relation> joinInfos=new ArrayList<Relation>();
-    protected Class classe;
+    protected Class<? extends Entity> classe;
+    protected List<WhereInfo> whereInfos=new ArrayList<WhereInfo>();
     public QueryBuilder(Class<? extends Entity> classe,String alias){
         this.setClasse(classe);
         this.alias=alias;
@@ -108,10 +108,19 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder where(String columnLeft,String operation,Object object)throws Exception{
-        String where=this.getJoinWhere(columnLeft);
-        this.where=where+" "+operation+" "+object;
+    public QueryBuilder where(String columnLeft,String operation,String columnRight)throws Exception{
+        this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight));
         return this;
+    }
+
+    protected String getScriptWhere()throws Exception{
+        String request="";
+        String and="";
+        for (WhereInfo whereInfo:this.whereInfos) {
+            request+=and+whereInfo.getWhere(this);
+            and="and ";
+        }
+        return request;
     }
 
     public QueryBuilder select(String select){
@@ -122,7 +131,7 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder having(String having){
+    public QueryBuilder havingRaw(String having){
         String and="";
         if(!Objects.equals(this.having, "")){
             and=" and";
@@ -135,7 +144,7 @@ public class QueryBuilder {
         this.orderBy="order by "+column+" "+ascendance;
     }
 
-    public String getRequest(){
+    public String getRequest()throws Exception{
         this.joinAll();
         String request="select "+this.select+" from \""+table+"\"";
         if(alias!=null){
@@ -144,8 +153,8 @@ public class QueryBuilder {
         if(!Objects.equals(this.join, "")){
             request+=" "+this.join;
         }
-        if(!Objects.equals(this.where, "")){
-            request+="\n where "+this.where;
+        if(this.whereInfos.size()!=0){
+            request+="\n where "+this.getScriptWhere();
         }
         if(!Objects.equals(this.having, "")){
             request+="\n having"+this.having;
@@ -170,16 +179,19 @@ public class QueryBuilder {
         return this;
     }
 
-    protected Relation getVariable(String variable)throws VariableNotFoundException {
+    protected Relation getVariable(String variable)throws PropertyNotFoundException {
         for (Relation joinInfo:this.joinInfos) {
             if(joinInfo.getName().compareTo(variable)==0 || joinInfo.getName().compareTo("\""+variable+"\"")==0){
                 return joinInfo;
             }
         }
-        throw new VariableNotFoundException(variable);
+        throw new PropertyNotFoundException(variable);
     }
 
     public String getJoinWhere(String sentence)throws Exception{
+        if(sentence.charAt(0) == ':'){
+            return sentence;
+        }
         String[] field=sentence.split("[.]");
         Relation joinInfo=this.getDeepJoin(field,1);
         return joinInfo.getName()+"."+field[field.length-1];
@@ -225,6 +237,24 @@ public class QueryBuilder {
         }
         catch (Exception ex){
             throw ex;
+        }
+    }
+
+    protected class WhereInfo{
+        public String operation;
+        public String columnLeft;
+        public String columnRight;
+
+        public WhereInfo(String columnLeft,String operation,String columnRight){
+            this.operation=operation;
+            this.columnLeft=columnLeft;
+            this.columnRight=columnRight;
+        }
+
+        private String getWhere(QueryBuilder queryBuilder)throws Exception{
+            this.columnRight=queryBuilder.getJoinWhere(this.columnRight);
+            this.columnLeft=queryBuilder.getJoinWhere(this.columnLeft);
+            return columnLeft+" "+operation+" "+columnRight;
         }
     }
 }
