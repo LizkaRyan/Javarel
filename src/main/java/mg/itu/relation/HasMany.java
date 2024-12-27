@@ -10,7 +10,7 @@ public final class HasMany extends Relation {
 
     public HasMany(Class<? extends Entity> classe,String idColumn,String idReference){
         super(classe,idColumn,idReference);
-        this.where("\""+idReference+"\" = :"+idLocal);
+        this.whereRaw("\""+idReference+"\" = :"+idLocal);
     }
 
     @Override

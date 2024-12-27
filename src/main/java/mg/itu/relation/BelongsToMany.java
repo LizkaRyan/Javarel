@@ -11,7 +11,7 @@ public final class BelongsToMany extends Relation{
     public BelongsToMany(Class<? extends Entity> classe,String idLocal,String idReference,String linkTable){
         super(classe,idLocal,idReference);
         this.linkTable=linkTable;
-        this.where("\""+idReference+"\" in (select \""+idReference+"\" from \""+linkTable+"\" where \""+idLocal+"\" = :"+idLocal+")");
+        this.whereRaw("\""+idReference+"\" in (select \""+idReference+"\" from \""+linkTable+"\" where \""+idLocal+"\" = :"+idLocal+")");
     }
     @Override
     public List<? extends Entity> execute() {

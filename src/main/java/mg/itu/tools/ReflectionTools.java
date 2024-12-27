@@ -11,15 +11,15 @@ public final class ReflectionTools {
         return classeName[classeName.length-1];
     }
 
-    public static Relation getRelationEntity(Class<? extends Entity> classe, String liaison)throws Exception{
+    public static Relation getRelationEntity(Class<? extends Entity> classe, String link)throws Exception{
         Object object=null;
         try{
             object=classe.getConstructor().newInstance();
-            Method method=classe.getMethod(liaison);
+            Method method=classe.getMethod(link);
             return (Relation)method.invoke(object);
         }
         catch (NoSuchMethodException ex){
-            throw new NoSuchMethodException("The entity "+getEntityName(classe)+" should have a constructor and a function "+liaison+" with no parameters");
+            throw new NoSuchMethodException("The entity "+getEntityName(classe)+" should have a constructor and a function "+link+" public with no parameters");
         }
         catch (InstantiationException ex){
             throw ex;

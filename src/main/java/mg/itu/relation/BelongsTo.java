@@ -9,7 +9,7 @@ import java.util.List;
 public final class BelongsTo extends Relation{
     public BelongsTo(Class<? extends Entity> classe, String idLocal, String idReference){
         super(classe,idLocal,idReference);
-        this.where("\""+idReference+"\" = :"+idLocal);
+        this.whereRaw("\""+idReference+"\" = :"+idLocal);
     }
 
     @Override
