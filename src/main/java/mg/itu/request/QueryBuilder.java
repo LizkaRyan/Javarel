@@ -1,9 +1,11 @@
 package mg.itu.request;
 
+import mg.itu.exception.NoWhereException;
 import mg.itu.exception.PropertyNotFoundException;
 import mg.itu.relation.HasOne;
 import mg.itu.relation.Relation;
 import mg.itu.tools.ReflectionTools;
+import mg.itu.tools.UtilString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,17 +16,11 @@ public class QueryBuilder {
     protected String alias;
     protected String select="*";
     protected String join="";
-
     protected String where="";
-
     protected String having="";
-
     protected String limit="";
-
     protected String orderBy="";
-
     protected String groupBy="";
-
     protected List<Relation> joinInfos=new ArrayList<Relation>();
     protected Class<? extends Entity> classe;
     protected List<WhereInfo> whereInfos=new ArrayList<WhereInfo>();
@@ -109,16 +105,33 @@ public class QueryBuilder {
     }
 
     public QueryBuilder where(String columnLeft,String operation,String columnRight)throws Exception{
-        this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight));
+        if(this.whereInfos.size()!=0){
+            this.whereInfos.remove(0);
+        }
+        this.whereInfos.add(0,new WhereInfo(columnLeft,operation,columnRight));
+        return this;
+    }
+
+    public QueryBuilder andWhere(String columnLeft,String operation,String columnRight)throws NoWhereException{
+        if(this.whereInfos.size()==0){
+            throw new NoWhereException();
+        }
+        this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight,"and"));
+        return this;
+    }
+
+    public QueryBuilder orWhere(String columnLeft,String operation,String columnRight)throws NoWhereException{
+        if(this.whereInfos.size()==0){
+            throw new NoWhereException();
+        }
+        this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight,"or"));
         return this;
     }
 
     protected String getScriptWhere()throws Exception{
         String request="";
-        String and="";
         for (WhereInfo whereInfo:this.whereInfos) {
-            request+=and+whereInfo.getWhere(this);
-            and="and ";
+            request+=whereInfo.getWhere(this);
         }
         return request;
     }
@@ -189,7 +202,7 @@ public class QueryBuilder {
     }
 
     public String getJoinWhere(String sentence)throws Exception{
-        if(sentence.charAt(0) == ':'){
+        if(!UtilString.isAVariable(sentence)){
             return sentence;
         }
         String[] field=sentence.split("[.]");
@@ -241,9 +254,10 @@ public class QueryBuilder {
     }
 
     protected class WhereInfo{
-        public String operation;
-        public String columnLeft;
-        public String columnRight;
+        protected String operation;
+        protected String columnLeft;
+        protected String columnRight;
+        protected String logicOperation;
 
         public WhereInfo(String columnLeft,String operation,String columnRight){
             this.operation=operation;
@@ -251,10 +265,20 @@ public class QueryBuilder {
             this.columnRight=columnRight;
         }
 
+        public WhereInfo(String columnLeft,String operation,String columnRight,String logicOperation){
+            this.operation=operation;
+            this.columnLeft=columnLeft;
+            this.columnRight=columnRight;
+            this.logicOperation=logicOperation;
+        }
+
         private String getWhere(QueryBuilder queryBuilder)throws Exception{
             this.columnRight=queryBuilder.getJoinWhere(this.columnRight);
             this.columnLeft=queryBuilder.getJoinWhere(this.columnLeft);
-            return columnLeft+" "+operation+" "+columnRight;
+            if(this.logicOperation==null){
+                return columnLeft+" "+operation+" "+columnRight;
+            }
+            return " "+logicOperation+" "+columnLeft+" "+operation+" "+columnRight;
         }
     }
 }
