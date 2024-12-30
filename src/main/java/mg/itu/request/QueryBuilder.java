@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class QueryBuilder {
+public class QueryBuilder implements Cloneable {
     protected String table;
     protected String alias;
     protected String select="*";
@@ -46,14 +46,14 @@ public class QueryBuilder {
         this.setClasse(classe);
     }
 
-    public String getName(){
+    protected String getName(){
         if(alias!=null){
             return alias;
         }
         return "\""+table+"\"";
     }
 
-    public void addJoin(Relation newRelation,String alias){
+    protected void addJoin(Relation newRelation,String alias){
         for (Relation relation:this.joinInfos) {
             if(relation.isTheSame(newRelation)){
                 relation.setAlias(alias);
@@ -63,7 +63,7 @@ public class QueryBuilder {
         this.joinInfos.add(newRelation);
     }
 
-    public void addJoin(Relation newRelation){
+    protected void addJoin(Relation newRelation){
         for (Relation relation:this.joinInfos) {
             if(relation.isTheSame(newRelation)){
                 return;
@@ -96,25 +96,39 @@ public class QueryBuilder {
     }
 
     public QueryBuilder whereRaw(String where){
-        String and="";
-        if(!Objects.equals(this.where, "")){
-            and=" and";
-        }
-        this.where+=and+" "+where;
+        this.whereInfos.add(new WhereInfo(where));
         return this;
     }
 
     public QueryBuilder where(String columnLeft,String operation,String columnRight)throws Exception{
-        if(this.whereInfos.size()!=0){
-            this.whereInfos.remove(0);
-        }
         this.whereInfos.add(0,new WhereInfo(columnLeft,operation,columnRight));
+        return this;
+    }
+
+    public QueryBuilder where(WhereBlock where)throws Exception{
+        this.whereInfos.add(new WhereInfo(where));
+        return this;
+    }
+
+    public QueryBuilder andWhere(WhereBlock where)throws Exception{
+        if(this.whereInfos.size()==0){
+            throw new NoWhereException("andWhere");
+        }
+        this.whereInfos.add(new WhereInfo(where,"and"));
+        return this;
+    }
+
+    public QueryBuilder orWhere(WhereBlock where)throws Exception{
+        if(this.whereInfos.size()==0){
+            throw new NoWhereException("andWhere");
+        }
+        this.whereInfos.add(new WhereInfo(where,"or"));
         return this;
     }
 
     public QueryBuilder andWhere(String columnLeft,String operation,String columnRight)throws NoWhereException{
         if(this.whereInfos.size()==0){
-            throw new NoWhereException();
+            throw new NoWhereException("andWhere");
         }
         this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight,"and"));
         return this;
@@ -122,18 +136,18 @@ public class QueryBuilder {
 
     public QueryBuilder orWhere(String columnLeft,String operation,String columnRight)throws NoWhereException{
         if(this.whereInfos.size()==0){
-            throw new NoWhereException();
+            throw new NoWhereException("orWhere");
         }
         this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight,"or"));
         return this;
     }
 
     protected String getScriptWhere()throws Exception{
-        String request="";
-        for (WhereInfo whereInfo:this.whereInfos) {
-            request+=whereInfo.getWhere(this);
+        StringBuilder request= new StringBuilder();
+        for (int i=0;i<this.whereInfos.size();i++) {
+            request.append(whereInfos.get(i).getWhere(this));
         }
-        return request;
+        return request.toString();
     }
 
     public QueryBuilder select(String select){
@@ -201,7 +215,7 @@ public class QueryBuilder {
         throw new PropertyNotFoundException(variable);
     }
 
-    public String getJoinWhere(String sentence)throws Exception{
+    protected String getJoinWhere(String sentence)throws Exception{
         if(!UtilString.isAVariable(sentence)){
             return sentence;
         }
@@ -253,17 +267,44 @@ public class QueryBuilder {
         }
     }
 
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        try {
+            QueryBuilder clone=(QueryBuilder) super.clone();
+            clone.whereInfos=new ArrayList<WhereInfo>();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
+
     protected class WhereInfo{
         protected String operation;
         protected String columnLeft;
         protected String columnRight;
         protected String logicOperation;
+        protected String raw;
+        protected WhereBlock whereBlock;
 
         public WhereInfo(String columnLeft,String operation,String columnRight){
             this.operation=operation;
             this.columnLeft=columnLeft;
             this.columnRight=columnRight;
         }
+
+        public WhereInfo(String raw){
+            this.raw=raw;
+        }
+
+        public WhereInfo(WhereBlock whereBlock){
+            this.whereBlock=whereBlock;
+        }
+
+        public WhereInfo(WhereBlock whereBlock,String logicOperation){
+            this.whereBlock=whereBlock;
+            this.logicOperation=logicOperation;
+        }
+
 
         public WhereInfo(String columnLeft,String operation,String columnRight,String logicOperation){
             this.operation=operation;
@@ -273,6 +314,17 @@ public class QueryBuilder {
         }
 
         private String getWhere(QueryBuilder queryBuilder)throws Exception{
+            if(this.raw!=null){
+                return " "+this.raw;
+            }
+            if(this.whereBlock!=null){
+                QueryBuilder clone=(QueryBuilder) queryBuilder.clone();
+                clone=whereBlock.block(clone);
+                if(this.logicOperation==null){
+                    return "("+clone.getScriptWhere()+")";
+                }
+                return " "+this.logicOperation+" ("+clone.getScriptWhere()+")";
+            }
             this.columnRight=queryBuilder.getJoinWhere(this.columnRight);
             this.columnLeft=queryBuilder.getJoinWhere(this.columnLeft);
             if(this.logicOperation==null){

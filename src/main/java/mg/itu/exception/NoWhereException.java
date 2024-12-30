@@ -1,7 +1,7 @@
 package mg.itu.exception;
 
 public class NoWhereException extends Exception{
-    public NoWhereException(){
-        super("Where must be called first and it is after the andWhere or orWhere can be called");
+    public NoWhereException(String typeWhere){
+        super("Where or WhereRaw must be called first and it is after that the "+typeWhere+" can be called");
     }
 }
