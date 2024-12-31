@@ -1,6 +1,6 @@
 package mg.itu.request;
 
-import mg.itu.exception.NoWhereException;
+import mg.itu.exception.NoFirstConditionException;
 import mg.itu.exception.PropertyNotFoundException;
 import mg.itu.relation.HasOne;
 import mg.itu.relation.Relation;
@@ -16,14 +16,14 @@ public class QueryBuilder implements Cloneable {
     protected String alias;
     protected String select="*";
     protected String join="";
-    protected String where="";
     protected String having="";
     protected String limit="";
     protected String orderBy="";
     protected String groupBy="";
     protected List<Relation> joinInfos=new ArrayList<Relation>();
     protected Class<? extends Entity> classe;
-    protected List<WhereInfo> whereInfos=new ArrayList<WhereInfo>();
+    protected List<ConditionInfo> whereInfos=new ArrayList<ConditionInfo>();
+    protected List<ConditionInfo> havingInfos=new ArrayList<ConditionInfo>();
     public QueryBuilder(Class<? extends Entity> classe,String alias){
         this.setClasse(classe);
         this.alias=alias;
@@ -96,56 +96,111 @@ public class QueryBuilder implements Cloneable {
     }
 
     public QueryBuilder whereRaw(String where){
-        this.whereInfos.add(new WhereInfo(where));
+        this.whereInfos.add(new ConditionInfo(where));
         return this;
     }
 
     public QueryBuilder where(String columnLeft,String operation,String columnRight)throws Exception{
-        this.whereInfos.add(0,new WhereInfo(columnLeft,operation,columnRight));
+        this.whereInfos.add(0,new ConditionInfo(columnLeft,operation,columnRight));
         return this;
     }
 
-    public QueryBuilder where(WhereBlock where)throws Exception{
-        this.whereInfos.add(new WhereInfo(where));
+    public QueryBuilder where(ConditionBlock where)throws Exception{
+        this.whereInfos.add(new ConditionInfo(where,true));
         return this;
     }
 
-    public QueryBuilder andWhere(WhereBlock where)throws Exception{
+    public QueryBuilder andWhere(ConditionBlock where)throws Exception{
         if(this.whereInfos.size()==0){
-            throw new NoWhereException("andWhere");
+            throw new NoFirstConditionException("Where","andWhere");
         }
-        this.whereInfos.add(new WhereInfo(where,"and"));
+        this.whereInfos.add(new ConditionInfo(where,"and",true));
         return this;
     }
 
-    public QueryBuilder orWhere(WhereBlock where)throws Exception{
+    public QueryBuilder orWhere(ConditionBlock where)throws Exception{
         if(this.whereInfos.size()==0){
-            throw new NoWhereException("andWhere");
+            throw new NoFirstConditionException("Where","andWhere");
         }
-        this.whereInfos.add(new WhereInfo(where,"or"));
+        this.whereInfos.add(new ConditionInfo(where,"or",true));
         return this;
     }
 
-    public QueryBuilder andWhere(String columnLeft,String operation,String columnRight)throws NoWhereException{
+    public QueryBuilder andWhere(String columnLeft,String operation,String columnRight)throws NoFirstConditionException {
         if(this.whereInfos.size()==0){
-            throw new NoWhereException("andWhere");
+            throw new NoFirstConditionException("Where","andWhere");
         }
-        this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight,"and"));
+        this.whereInfos.add(new ConditionInfo(columnLeft,operation,columnRight,"and"));
         return this;
     }
 
-    public QueryBuilder orWhere(String columnLeft,String operation,String columnRight)throws NoWhereException{
+    public QueryBuilder orWhere(String columnLeft,String operation,String columnRight)throws NoFirstConditionException {
         if(this.whereInfos.size()==0){
-            throw new NoWhereException("orWhere");
+            throw new NoFirstConditionException("Where","orWhere");
         }
-        this.whereInfos.add(new WhereInfo(columnLeft,operation,columnRight,"or"));
+        this.whereInfos.add(new ConditionInfo(columnLeft,operation,columnRight,"or"));
+        return this;
+    }
+
+    public QueryBuilder havingRaw(String condition){
+        this.havingInfos.add(new ConditionInfo(condition));
+        return this;
+    }
+
+    public QueryBuilder having(String columnLeft,String operation,String columnRight)throws Exception{
+        this.havingInfos.add(0,new ConditionInfo(columnLeft,operation,columnRight));
+        return this;
+    }
+
+    public QueryBuilder having(ConditionBlock condition)throws Exception{
+        this.havingInfos.add(new ConditionInfo(condition,false));
+        return this;
+    }
+
+    public QueryBuilder andHaving(ConditionBlock condition)throws Exception{
+        if(this.havingInfos.size()==0){
+            throw new NoFirstConditionException("Having","andHaving");
+        }
+        this.havingInfos.add(new ConditionInfo(condition,"and",false));
+        return this;
+    }
+
+    public QueryBuilder orHaving(ConditionBlock condition)throws Exception{
+        if(this.havingInfos.size()==0){
+            throw new NoFirstConditionException("Having","andHaving");
+        }
+        this.havingInfos.add(new ConditionInfo(condition,"or",false));
+        return this;
+    }
+
+    public QueryBuilder andHaving(String columnLeft,String operation,String columnRight)throws NoFirstConditionException {
+        if(this.havingInfos.size()==0){
+            throw new NoFirstConditionException("Having","andHaving");
+        }
+        this.havingInfos.add(new ConditionInfo(columnLeft,operation,columnRight,"and"));
+        return this;
+    }
+
+    public QueryBuilder orHaving(String columnLeft,String operation,String columnRight)throws NoFirstConditionException {
+        if(this.havingInfos.size()==0){
+            throw new NoFirstConditionException("Having","orHaving");
+        }
+        this.havingInfos.add(new ConditionInfo(columnLeft,operation,columnRight,"or"));
         return this;
     }
 
     protected String getScriptWhere()throws Exception{
         StringBuilder request= new StringBuilder();
         for (int i=0;i<this.whereInfos.size();i++) {
-            request.append(whereInfos.get(i).getWhere(this));
+            request.append(whereInfos.get(i).getCondition(this));
+        }
+        return request.toString();
+    }
+
+    protected String getScriptHaving()throws Exception{
+        StringBuilder request= new StringBuilder();
+        for (int i=0;i<this.havingInfos.size();i++) {
+            request.append(havingInfos.get(i).getCondition(this));
         }
         return request.toString();
     }
@@ -155,15 +210,6 @@ public class QueryBuilder implements Cloneable {
             this.select+=", ";
         }
         this.select=select;
-        return this;
-    }
-
-    public QueryBuilder havingRaw(String having){
-        String and="";
-        if(!Objects.equals(this.having, "")){
-            and=" and";
-        }
-        this.having+=and+" "+having;
         return this;
     }
 
@@ -183,8 +229,8 @@ public class QueryBuilder implements Cloneable {
         if(this.whereInfos.size()!=0){
             request+="\n where "+this.getScriptWhere();
         }
-        if(!Objects.equals(this.having, "")){
-            request+="\n having"+this.having;
+        if(this.havingInfos.size()!=0){
+            request+="\n having "+this.getScriptHaving();
         }
         if(!Objects.equals(this.orderBy, "")){
             request+="\n "+this.orderBy;
@@ -220,6 +266,9 @@ public class QueryBuilder implements Cloneable {
             return sentence;
         }
         String[] field=sentence.split("[.]");
+        if(field.length==1){
+            return field[0];
+        }
         Relation joinInfo=this.getDeepJoin(field,1);
         return joinInfo.getName()+"."+field[field.length-1];
     }
@@ -230,18 +279,10 @@ public class QueryBuilder implements Cloneable {
     }
 
     protected Relation getDeepJoin(String[] field,int limit)throws Exception{
-        if(field.length==1){
-            return ReflectionTools.getRelationEntity(this.classe,field[0]);
-        }
-        Class<? extends Entity> entity=this.getClasse();
         try{
             Relation joinInfo=this.getVariable(field[0]);
-            int i;
-            for(i = 1; i < field.length - limit; i++){
+            for(int i = 1; i < field.length - limit; i++){
                 joinInfo=getRelation(field[i], joinInfo.getClasse(), joinInfo.getName());
-            }
-            if(joinInfo.isTheSame(this.joinInfos.get(0))){
-                return ReflectionTools.getRelationEntity(this.classe,field[i]);
             }
             return joinInfo;
         }
@@ -271,59 +312,71 @@ public class QueryBuilder implements Cloneable {
     protected Object clone() throws CloneNotSupportedException {
         try {
             QueryBuilder clone=(QueryBuilder) super.clone();
-            clone.whereInfos=new ArrayList<WhereInfo>();
+            clone.whereInfos=new ArrayList<ConditionInfo>();
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
     }
 
-    protected class WhereInfo{
+    protected class ConditionInfo{
         protected String operation;
         protected String columnLeft;
         protected String columnRight;
         protected String logicOperation;
         protected String raw;
-        protected WhereBlock whereBlock;
+        protected ConditionBlock conditionBlock;
+        protected boolean isWhere;
 
-        public WhereInfo(String columnLeft,String operation,String columnRight){
+        public ConditionInfo(String columnLeft,String operation,String columnRight){
             this.operation=operation;
             this.columnLeft=columnLeft;
             this.columnRight=columnRight;
         }
 
-        public WhereInfo(String raw){
+        public ConditionInfo(String raw){
             this.raw=raw;
         }
 
-        public WhereInfo(WhereBlock whereBlock){
-            this.whereBlock=whereBlock;
+        public ConditionInfo(ConditionBlock conditionBlock,boolean isWhere){
+            this.conditionBlock=conditionBlock;
+            this.isWhere=isWhere;
         }
 
-        public WhereInfo(WhereBlock whereBlock,String logicOperation){
-            this.whereBlock=whereBlock;
+        public ConditionInfo(ConditionBlock conditionBlock, String logicOperation,boolean isWhere){
+            this.conditionBlock=conditionBlock;
             this.logicOperation=logicOperation;
+            this.isWhere=isWhere;
         }
 
-
-        public WhereInfo(String columnLeft,String operation,String columnRight,String logicOperation){
+        public ConditionInfo(String columnLeft,String operation,String columnRight,String logicOperation){
             this.operation=operation;
             this.columnLeft=columnLeft;
             this.columnRight=columnRight;
             this.logicOperation=logicOperation;
         }
 
-        private String getWhere(QueryBuilder queryBuilder)throws Exception{
+        protected String getScript(QueryBuilder queryBuilder)throws Exception{
+            QueryBuilder clone=(QueryBuilder) queryBuilder.clone();
+            clone=conditionBlock.block(clone);
+            if(this.logicOperation==null){
+                if(this.isWhere){
+                    return "("+clone.getScriptWhere()+")";
+                }
+                return "("+clone.getScriptHaving()+")";
+            }
+            if(this.isWhere){
+                return " "+this.logicOperation+" ("+clone.getScriptWhere()+")";
+            }
+            return " "+this.logicOperation+" ("+clone.getScriptHaving()+")";
+        }
+
+        private String getCondition(QueryBuilder queryBuilder)throws Exception{
             if(this.raw!=null){
                 return " "+this.raw;
             }
-            if(this.whereBlock!=null){
-                QueryBuilder clone=(QueryBuilder) queryBuilder.clone();
-                clone=whereBlock.block(clone);
-                if(this.logicOperation==null){
-                    return "("+clone.getScriptWhere()+")";
-                }
-                return " "+this.logicOperation+" ("+clone.getScriptWhere()+")";
+            if(this.conditionBlock!=null){
+                this.getScript(queryBuilder);
             }
             this.columnRight=queryBuilder.getJoinWhere(this.columnRight);
             this.columnLeft=queryBuilder.getJoinWhere(this.columnLeft);
